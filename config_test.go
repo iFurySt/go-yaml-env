@@ -123,3 +123,35 @@ func TestGetCfgPath(t *testing.T) {
 	expectedPath, _ := filepath.Abs(relPath)
 	assert.Equal(t, expectedPath, getCfgPath(relPath))
 }
+
+func TestLoadConfigWithDotEnv(t *testing.T) {
+	// 清理相关环境变量，确保只从.env读取
+	os.Unsetenv("LOGGER_LEVEL")
+	os.Unsetenv("LOGGER_FORMAT")
+
+	tmpDir := t.TempDir()
+
+	dotenvPath := filepath.Join(tmpDir, ".env")
+	dotenvContent := "LOGGER_LEVEL=warn\nLOGGER_FORMAT=logfmt\n"
+	err := os.WriteFile(dotenvPath, []byte(dotenvContent), 0644)
+	assert.NoError(t, err)
+
+	testConfig := `
+logger:
+  level: "${LOGGER_LEVEL:info}"
+  format: "${LOGGER_FORMAT:console}"
+`
+	configPath := filepath.Join(tmpDir, "test_config.yaml")
+	err = os.WriteFile(configPath, []byte(testConfig), 0644)
+	assert.NoError(t, err)
+
+	oldWd, _ := os.Getwd()
+	defer os.Chdir(oldWd)
+	os.Chdir(tmpDir)
+
+	cfg, path, err := LoadConfig[TestConfig](configPath)
+	assert.NoError(t, err)
+	assert.Equal(t, configPath, path)
+	assert.Equal(t, "warn", cfg.Logger.Level)
+	assert.Equal(t, "logfmt", cfg.Logger.Format)
+}
