@@ -2,7 +2,6 @@ package yamlenv
 
 import (
 	"os"
-	"path/filepath"
 	"regexp"
 
 	"github.com/joho/godotenv"
@@ -10,14 +9,13 @@ import (
 )
 
 // LoadConfig loads configuration from a YAML file with environment variable support
-func LoadConfig[T any](filename string) (*T, string, error) {
+func LoadConfig[T any](filename string) (*T, error) {
 	// Load .env file if exists
 	_ = godotenv.Load()
 
-	cfgPath := getCfgPath(filename)
-	data, err := os.ReadFile(cfgPath)
+	data, err := os.ReadFile(filename)
 	if err != nil {
-		return nil, cfgPath, err
+		return nil, err
 	}
 
 	// Resolve environment variables
@@ -25,10 +23,10 @@ func LoadConfig[T any](filename string) (*T, string, error) {
 
 	var cfg T
 	if err := yaml.Unmarshal(data, &cfg); err != nil {
-		return nil, cfgPath, err
+		return nil, err
 	}
 
-	return &cfg, cfgPath, nil
+	return &cfg, nil
 }
 
 // resolveEnv replaces environment variable placeholders in YAML content
@@ -49,28 +47,4 @@ func resolveEnv(content []byte) []byte {
 		}
 		return []byte(defaultValue)
 	})
-}
-
-// getCfgPath returns the absolute path of the configuration file
-func getCfgPath(filename string) string {
-	if filepath.IsAbs(filename) {
-		return filename
-	}
-
-	// Try to find the config file in the current directory first
-	if _, err := os.Stat(filename); err == nil {
-		absPath, _ := filepath.Abs(filename)
-		return absPath
-	}
-
-	// If not found, try to find it in the config directory
-	configDir := "config"
-	if _, err := os.Stat(configDir); err == nil {
-		absPath, _ := filepath.Abs(filepath.Join(configDir, filename))
-		return absPath
-	}
-
-	// If still not found, return the absolute path of the original filename
-	absPath, _ := filepath.Abs(filename)
-	return absPath
 }

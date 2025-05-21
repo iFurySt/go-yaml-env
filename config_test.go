@@ -42,9 +42,8 @@ logger:
 	assert.NoError(t, err)
 
 	// Test with default values
-	cfg, path, err := LoadConfig[TestConfig](configPath)
+	cfg, err := LoadConfig[TestConfig](configPath)
 	assert.NoError(t, err)
-	assert.Equal(t, configPath, path)
 	assert.Equal(t, "info", cfg.Logger.Level)
 	assert.Equal(t, "console", cfg.Logger.Format)
 	assert.Equal(t, "stdout", cfg.Logger.Output)
@@ -61,9 +60,8 @@ logger:
 	os.Setenv("LOGGER_MAX_SIZE", "200")
 	os.Setenv("LOGGER_COMPRESS", "false")
 
-	cfg, path, err = LoadConfig[TestConfig](configPath)
+	cfg, err = LoadConfig[TestConfig](configPath)
 	assert.NoError(t, err)
-	assert.Equal(t, configPath, path)
 	assert.Equal(t, "debug", cfg.Logger.Level)
 	assert.Equal(t, "json", cfg.Logger.Format)
 	assert.Equal(t, "stdout", cfg.Logger.Output)
@@ -82,10 +80,8 @@ logger:
 }
 
 func TestLoadConfigWithInvalidFile(t *testing.T) {
-	absPath, _ := filepath.Abs("nonexistent.yaml")
-	_, path, err := LoadConfig[TestConfig]("nonexistent.yaml")
+	_, err := LoadConfig[TestConfig]("nonexistent.yaml")
 	assert.Error(t, err)
-	assert.Equal(t, absPath, path)
 }
 
 func TestLoadConfigWithInvalidYAML(t *testing.T) {
@@ -108,20 +104,8 @@ invalid: yaml: here
 	err := os.WriteFile(configPath, []byte(testConfig), 0644)
 	assert.NoError(t, err)
 
-	_, path, err := LoadConfig[TestConfig](configPath)
+	_, err = LoadConfig[TestConfig](configPath)
 	assert.Error(t, err)
-	assert.Equal(t, configPath, path)
-}
-
-func TestGetCfgPath(t *testing.T) {
-	// Test absolute path
-	absPath := "/absolute/path/config.yaml"
-	assert.Equal(t, absPath, getCfgPath(absPath))
-
-	// Test relative path
-	relPath := "config.yaml"
-	expectedPath, _ := filepath.Abs(relPath)
-	assert.Equal(t, expectedPath, getCfgPath(relPath))
 }
 
 func TestLoadConfigWithDotEnv(t *testing.T) {
@@ -149,9 +133,8 @@ logger:
 	defer os.Chdir(oldWd)
 	os.Chdir(tmpDir)
 
-	cfg, path, err := LoadConfig[TestConfig](configPath)
+	cfg, err := LoadConfig[TestConfig](configPath)
 	assert.NoError(t, err)
-	assert.Equal(t, configPath, path)
 	assert.Equal(t, "warn", cfg.Logger.Level)
 	assert.Equal(t, "logfmt", cfg.Logger.Format)
 }
